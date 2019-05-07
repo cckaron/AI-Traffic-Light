@@ -27,12 +27,11 @@ int httpCode;
 int value;
 int sending;
 
-int second, operand;
-long now_direct;
-long light_a, light_b, light_c, light_d, variaSec_a, variaSec_b, variaSec_c, variaSec_d;
+long second, operand, now_direct, now_second;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(9600); // for receiving seconds from Arduino
+  Serial1.begin(9600);// for transmitting operator and operands
 
   //waiting for wifi connected
   WiFi.begin(ssid, password);
@@ -52,54 +51,42 @@ void setup() {
 
   //web server
   page = "<h1>NodeMCU Web Server</h1><p><a href=\"minus\"><button>Minus</button></a></p>";
-  page2 = "<h1>Has been added</h1>";
-  page3 = "<h1>Has been minused</h1>";
 
   server.on("/", []() {
     server.send(200, "text/html", page);
   });
 
-  server.on("/add", []() {
+  server.on("/change", []() {
+    operand = server.arg(0).toInt();
+    second = server.arg(1).toInt();
+    page2 = "<h1>Operand:"+ operand;
+    page2 += "</h1><h1><Data:";
+    page2 += second;
+    page2 += "></h1>";
     server.send(200, "text/html", page2);
 
-    second = server.arg(0).toInt();
-
-    data["operand"] = 1;
+    data["operand"] = operand;
     data["second"] = second;
 
     //send message to Arduino
-    serializeJsonPretty(data, Serial);
-  });
-  
-  server.on("/minus", []() {
-    server.send(200, "text/html", page3);
-
-    second = server.arg(0).toInt();
-
-    data["operand"] = 2;
-    data["second"] = second;
-
-    //send message to Arduino
-    serializeJsonPretty(data, Serial);
+    serializeJsonPretty(data, Serial1);
   });
 
   server.begin();
 
-  Serial.write(100); //init message
+  Serial1.write(100); //init message
 }
 
 void loop() {
   while (Serial.available() > 0) {
     received = Serial.readString();
-
+    Serial.println(received);
     DeserializationError error = deserializeJson(doc, received);
     JsonObject data = doc.as<JsonObject>();
-    light_a = data["sec_a"];
+    now_second = data["now_second"];
     now_direct = data["now_direct"];
-//    variaSec_a = data["variaSec_a"];
-//    variaSec_c = data["variaSec_c"];
-
-    url = "http://192.168.50.149/arduino/" + String(light_a) + "/" + String(now_direct);
+    
+    url = "http://192.168.50.46/arduino/" + String(now_direct) + "/" + String(now_second);
 
     http.begin(url);
     httpCode = http.GET();

@@ -1,0 +1,1 @@
+Updated library definition for platformIO rolling up to version 1.5.0 which will be released as GPL v3.0
