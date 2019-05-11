@@ -1,18 +1,36 @@
 #define RED1 22
 #define GREEN1 23
-#define RED2 24
-#define GREEN2 25
-#define RED3 26
-#define GREEN3 27
+#define RED2 26
+#define GREEN2 27
+#define RED3 24
+#define GREEN3 25
 #define RED4 28
-#define GREEN4 29 //28 29 供電有問題!!
+#define GREEN4 29
+ 
+String DIR1 = "49"; //ASCII -> 1
+String DIR2 = "50"; //ASCII -> 2
 
-int received;
+String received;
 
 void setup() {
+  initSerial();
+
+  initLight();
+
+  Serial1.write(100); //transmit init message to main controller
+}
+
+void loop() {
+  //listen to main controller
+  listenToMainController();
+}
+
+void initSerial() {
   Serial.begin(9600);
   Serial1.begin(9600);
+}
 
+void initLight() {
   pinMode(RED1, OUTPUT);
   pinMode(GREEN1, OUTPUT);
   pinMode(RED2, OUTPUT);
@@ -30,16 +48,14 @@ void setup() {
   digitalWrite(GREEN3, HIGH);
   digitalWrite(RED4, LOW);
   digitalWrite(GREEN4, HIGH);
-
-  Serial1.write(100); //init message
 }
 
-void loop() {
+void listenToMainController() {
   if (Serial1.available() > 0) {
     received = Serial1.read();
     Serial.println(received);
 
-    if (received == 1) {
+    if (received == DIR1) {
       digitalWrite(RED1, HIGH);
       digitalWrite(GREEN1, LOW);
       digitalWrite(RED2, HIGH);
@@ -49,7 +65,7 @@ void loop() {
       digitalWrite(RED4, LOW);
       digitalWrite(GREEN4, HIGH);
 
-    } else if (received == 2) {
+    } else if (received == DIR2) {
       digitalWrite(RED1, LOW);
       digitalWrite(GREEN1, HIGH);
       digitalWrite(RED2, LOW);

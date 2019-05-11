@@ -30,27 +30,60 @@ int sending;
 long second, operand, now_direct, now_second;
 
 void setup() {
-  Serial.begin(9600); // for receiving seconds from Arduino
-  Serial1.begin(9600);// for transmitting operator and operands
+  initSerial();
 
-  //waiting for wifi connected
+  //waiting for wifi connection
+  initWIFI();
+
+  //start wifi server
+  initWIFIServer();
+
+  //send init message to main controller
+  Serial1.write(100);
+}
+
+void loop() {
+  listenToMainController();
+  server.handleClient();
+}
+
+void listenToMainController() {
+  while (Serial.available() > 0) {
+    received = Serial.readString();
+    Serial.println(received);
+    DeserializationError error = deserializeJson(doc, received);
+    JsonObject data = doc.as<JsonObject>();
+    now_second = data["now_second"];
+    now_direct = data["now_direct"];
+
+    passInfo(now_second, now_direct);
+  }
+}
+
+void initSerial() {
+  Serial.begin(9600); // for receiving seconds from Arduino
+  Serial1.begin(9600);// for transmitting operator and operands //D4
+}
+
+void initWIFI() {
   WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED) {
+    Serial.println("Connecting...");
     delay(1000);
-    //    Serial.println("Connecting..");
   }
 
-  //  Serial.print("Conntected to Wifi. IP:");
-  //  Serial.println(WiFi.localIP());
+  Serial.print("Conntected to Wifi. IP:");
+  Serial.println(WiFi.localIP());
 
   wifiServer.begin();
-  //  Serial.println("port 2345 opened");
+  Serial.println("port 2345 opened");
+  Serial.println(WiFi.macAddress());
+}
 
-  //  Serial.println(WiFi.macAddress());
-
-  //web server
-  page = "<h1>NodeMCU Web Server</h1><p><a href=\"minus\"><button>Minus</button></a></p>";
+void initWIFIServer() {
+  //page info
+  page = "<h1>NodeMCU Web Server</h1>";
 
   server.on("/", []() {
     server.send(200, "text/html", page);
@@ -59,7 +92,7 @@ void setup() {
   server.on("/change", []() {
     operand = server.arg(0).toInt();
     second = server.arg(1).toInt();
-    page2 = "<h1>Operand:"+ operand;
+    page2 = "<h1>Operand:" + operand;
     page2 += "</h1><h1><Data:";
     page2 += second;
     page2 += "></h1>";
@@ -73,25 +106,11 @@ void setup() {
   });
 
   server.begin();
-
-  Serial1.write(100); //init message
 }
 
-void loop() {
-  while (Serial.available() > 0) {
-    received = Serial.readString();
-    Serial.println(received);
-    DeserializationError error = deserializeJson(doc, received);
-    JsonObject data = doc.as<JsonObject>();
-    now_second = data["now_second"];
-    now_direct = data["now_direct"];
-    
-    url = "http://192.168.50.46/arduino/" + String(now_direct) + "/" + String(now_second);
-
-    http.begin(url);
-    httpCode = http.GET();
-    http.end();
-  }
-
-  server.handleClient();
+void passInfo(int dir, int sec) {
+  url = "http://192.168.50.46/arduino/" + String(dir) + "/" + String(sec);
+  http.begin(url);
+  httpCode = http.GET();
+  http.end();
 }
