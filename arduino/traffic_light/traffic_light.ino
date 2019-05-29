@@ -15,12 +15,13 @@
 #define CLK4 29
 
 //declare 4 traffic lights
-TrafficLight light_a(1, 30, CLK1, DIO1); // TrafficLight(dir, deafult sec, CLK, DIO)
-TrafficLight light_b(1, 30, CLK2, DIO2);
-TrafficLight light_c(2, 20, CLK3, DIO3);
-TrafficLight light_d(2, 20, CLK4, DIO4);
+TrafficLight light_a(1, 90, CLK1, DIO1); // TrafficLight(dir, deafult sec, CLK, DIO)
+TrafficLight light_b(1, 90, CLK2, DIO2);
+TrafficLight light_c(2, 90, CLK3, DIO3);
+TrafficLight light_d(2, 90, CLK4, DIO4);
 
-int operand, second;
+int operand;
+float second;
 int nowDirect; // 1->ab; 2->cd;
 int lastUpdate;
 const long interval = 1000;
@@ -55,7 +56,7 @@ void setup() {
   setDirAndSec(1, light_a.defaultSec + 1);
 
   //每 3 秒傳送秒數資料給 NodeMCU
-  sendESP.every(5000, sendJSON);
+  sendESP.every(2000, sendJSON);
 }
 
 void loop() {
@@ -257,50 +258,55 @@ void listenToNodeMCU() {
   }
 }
 
-void adjustSecond(int sec, int oper) {
+void adjustSecond(float sec, int oper) {
   //調整秒數 1->"+"; 2->"-"; 3->"*"; 4->"/"; 5->"="
+  Serial.print("adjust second:");
+  Serial.println(sec);
+  Serial.print("operand:");
+  Serial.print(oper);
+  
   switch (oper) {
     case 1: //"+"
-      message = "Add " + sec;
-      light_a.add(sec);
-      light_b.add(sec);
-      light_c.add(sec);
-      light_d.add(sec);
+      message = "Add ";
+      light_a.add(int(sec));
+      light_b.add(int(sec));
+      light_c.add(int(sec));
+      light_d.add(int(sec));
       break;
     case 2: //"-"
-      message = "Minus " + sec;
+      message = "Minus ";
       if ((light_c.nowSec - sec ) <= 0) {
         light_a.nowSec = 0;
         light_b.nowSec = 0;
         light_c.nowSec = 0;
         light_d.nowSec = 0;
       } else {
-        light_a.minus(sec);
-        light_b.minus(sec);
-        light_c.minus(sec);
-        light_d.minus(sec);
+        light_a.minus(int(sec));
+        light_b.minus(int(sec));
+        light_c.minus(int(sec));
+        light_d.minus(int(sec));
       }
       break;
     case 3: //"*"
-      message = "Mutiply " + sec;
+      message = "Mutiply ";
       light_a.multiply(sec);
       light_b.multiply(sec);
       light_c.multiply(sec);
       light_d.multiply(sec);
       break;
     case 4: //"/"
-      message = "Divide " + sec;
+      message = "Divide ";
       light_a.divide(sec);
       light_b.divide(sec);
       light_c.divide(sec);
       light_d.divide(sec);
       break;
     case 5: //"="
-      message = "Divide " + sec;
-      light_a.setSec(sec);
-      light_b.setSec(sec);
-      light_c.setSec(sec);
-      light_d.setSec(sec);
+      message = "Divide ";
+      light_a.setSec(int(sec));
+      light_b.setSec(int(sec));
+      light_c.setSec(int(sec));
+      light_d.setSec(int(sec));
       break;
   }
 }

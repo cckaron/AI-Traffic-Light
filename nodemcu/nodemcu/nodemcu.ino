@@ -27,7 +27,8 @@ int httpCode;
 int value;
 int sending;
 
-long second, operand, now_direct, now_second;
+String second, operand;
+long now_direct, now_second;
 
 void setup() {
   initSerial();
@@ -56,7 +57,7 @@ void listenToMainController() {
     now_second = data["now_second"];
     now_direct = data["now_direct"];
 
-    passInfo(now_second, now_direct);
+    passInfo(now_direct, now_second);
   }
 }
 
@@ -90,16 +91,20 @@ void initWIFIServer() {
   });
 
   server.on("/change", []() {
-    operand = server.arg(0).toInt();
-    second = server.arg(1).toInt();
+    operand = server.arg(0);
+    second = server.arg(1);
     page2 = "<h1>Operand:" + operand;
-    page2 += "</h1><h1><Data:";
+    page2 += "</h1><h1><p>Data:";
     page2 += second;
-    page2 += "></h1>";
+    page2 += "</p></h1>";
     server.send(200, "text/html", page2);
 
     data["operand"] = operand;
     data["second"] = second;
+    Serial.print("operand:");
+    Serial.print(operand);
+    Serial.println("second:");
+    Serial.print(second);
 
     //send message to Arduino
     serializeJsonPretty(data, Serial1);
